@@ -1,6 +1,6 @@
 # Agenda: iPhone to-do app
 
-You are picking up a project that was planned in an earlier Claude session. That session ran in a cloud container without Xcode, so **no app code exists yet**. This branch contains only the plan.
+A first full version of the app exists: every milestone (M1–M7) is built and checked in the iOS Simulator. What's left is testing on the user's iPhone (see `docs/PLAN.md` §5), which needs a real Apple Developer Team ID and bundle ID.
 
 ## Read these, in order
 
@@ -23,7 +23,8 @@ A to-do app built so people spend as little time in it as possible. They capture
 ## How to work in this repo
 
 - **All rules live in the core package (`AgendaCore`, in `AgendaKit/`).** The app, widgets, intents, notification handlers and extensions call the same actions. Never re-implement a rule in a view or an extension.
-- **Test the core with `swift test` in `AgendaKit/`.** Tests name the rule IDs they cover. Add a test with every rule change.
+- **All writes go through `AgendaStore.perform` (`AgendaData`).** It runs a core rule and saves only what changed. `SharedStore.shared` is the one store; each target's `SharedStore.afterChange` decides what follows a change (reminders, widget reloads).
+- **Test with `swift test` in `AgendaKit/`.** Core and storage tests name the rule IDs they cover. Add a test with every rule change.
 - **Proposed rules are not confirmed.** Before building on one, ask the user. `docs/PLAN.md` §1 lists what to ask first.
 - **No third-party dependencies.**
 - **Generate the Xcode project with XcodeGen** from `project.yml`. Don't hand-edit `.pbxproj`. Info.plist and `.entitlements` files are generated from `project.yml` too, and are not committed. Re-run `xcodegen` after adding or removing files.
@@ -40,8 +41,13 @@ swift test --package-path AgendaKit         # core tests, no simulator needed
 xcodebuild -project Agenda.xcodeproj -scheme Agenda \
   -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build
 # The app is then at DerivedData/Build/Products/Debug-iphonesimulator/Agenda.app
-# `xcodebuild … test` runs the core tests on the simulator too.
+# `xcodebuild … test` runs the package tests on the simulator too.
 ```
+
+- **Sample data:** a debug build launched with `-demo` on an empty store fills in lists, a project, a sequence, subtasks and reminders (`App/DemoData.swift`): `xcrun simctl launch booted com.example.agenda -demo`.
+- **Reminder engine log:** `xcrun simctl spawn booted log show --last 5m --info --predicate 'subsystem == "Agenda"'` shows what each run scheduled.
+- **The Simulator can't** ring AlarmKit alarms (permission is always denied there, so alarms fall back to notifications), start Live Activities on a schedule, or sync with iCloud without a team. Those are on the device checklist.
+- **Other sessions on this Mac may use the same Simulators** (a Todo app from another project was being installed onto the iPhone 17 while this was built). Use a Simulator of your own if apps start switching by themselves.
 
 ## Status
 
@@ -50,10 +56,12 @@ xcodebuild -project Agenda.xcodeproj -scheme Agenda \
 - [x] Open questions in `docs/PLAN.md` §1 answered
 - [x] M1 Core rules and tests
 - [x] M2 Xcode project skeleton (with placeholder IDs; see above)
-- [ ] M3 Storage and iCloud
-- [ ] M4 In-app screens
-- [ ] M5 Reminder engine
-- [ ] M6 Out-of-app surfaces
-- [ ] M7 Calendar
+- [x] M3 Storage and iCloud (sync untested: needs a real team and iCloud container)
+- [x] M4 In-app screens
+- [x] M5 Reminder engine (notifications checked in the Simulator; alarms and Live Activities need a device)
+- [x] M6 Out-of-app surfaces (widget, share extension and App Intents checked in the Simulator)
+- [x] M7 Calendar
+- [ ] Device checklist in `docs/PLAN.md` §5
+- [ ] M8 (optional) CI
 
 Update this checklist as milestones land.

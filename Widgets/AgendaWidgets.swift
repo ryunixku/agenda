@@ -60,9 +60,11 @@ struct NextTasksProvider: TimelineProvider {
         let tasks = store.agenda.actionable(at: context)
         let items = tasks.prefix(6).map { task in
             let schedule = try? store.agenda.schedule(of: task.id, at: context)
-            let detail = schedule?.doDate.map { doDate in
-                schedule?.isOverdue == true ? "Since \(doDate.day.description)" : (doDate.time?.description ?? "Today")
-            } ?? ""
+            let detail: String = {
+                guard let doDate = schedule?.doDate else { return "" }
+                if schedule?.isOverdue == true { return "Since \(Format.day(doDate.day))" }
+                return doDate.time.map(Format.time) ?? "Today"
+            }()
             return NextTasksEntry.Item(id: task.id, title: task.title, detail: detail, overdue: schedule?.isOverdue == true)
         }
         return NextTasksEntry(date: .now, items: Array(items), total: tasks.count)

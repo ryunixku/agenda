@@ -97,10 +97,17 @@ Each milestone ends with a passing build and tests, a commit and a push. If the 
 
 Keep this list updated as milestones land. Report it honestly; don't mark an item as passing unless it was tested on a device.
 
-- [ ] Alarm rings in Silent mode and Focus. Done on the alarm completes the task.
-- [ ] Sticky reminder appears as a Live Activity at its time and repeats as a notification until acted on.
+Before any of this: set the real `APP_BUNDLE_ID` and `DEVELOPMENT_TEAM` in `project.yml`, run `xcodegen`, and run on the iPhone from Xcode.
+
+Checked in the Simulator only (still worth a look on the device): widget check buttons, sharing a Safari page, notification scheduling with sticky repeats, the Apple Calendar toggle, App Intents registration.
+
+- [ ] Alarm permission is asked when a reminder is first set to Alarm. The alarm rings in Silent mode and Focus. Done on the alarm completes the task.
+- [ ] Sticky reminder appears as a Live Activity at its time, with Done / Tonight / Tomorrow working from the Lock Screen, and repeats as a notification every 10 minutes until acted on.
+- [ ] Notification buttons: Done, Tonight and Tomorrow work without opening the app; Pick… opens the reschedule sheet.
 - [ ] Reschedule from a notification moves all of that task's reminders.
-- [ ] An override that passes falls back to the original plan.
+- [ ] A recurring task's reschedule that passes falls back to its schedule; a one-off stays overdue since the new day.
 - [ ] Data syncs between installs through iCloud (for example, delete and reinstall, or a second device).
-- [ ] Widget check buttons and Siri / Shortcuts actions work without opening the app.
+- [ ] Widget check buttons and Siri / Shortcuts actions ("Add a task in Agenda", "What's next in Agenda") work without opening the app.
+- [ ] The Control Center "Add to Agenda" button opens the app ready to type.
 - [ ] Sharing from Photos, Safari and Files creates a task.
+- [ ] Camera and document scanner capture (not available in the Simulator).

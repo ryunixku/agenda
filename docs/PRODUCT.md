@@ -141,6 +141,7 @@
 - **R8 (Proposed).** If a reminder is added to an undated task, the reminder's time becomes the task's start date.
 - **R9 (Proposed).** If the main reminder is removed, the earliest remaining reminder becomes the main one, and every remaining reminder keeps its time.
 - **R10 (Proposed).** If the do date is a whole day with no time, reminders that count minutes from it ("30 minutes before") count from 09:00.
+- **R11 (Proposed).** If alarms aren't allowed for the app, alarm reminders arrive as sticky notifications instead, so a reminder never goes silent. The task screen says so.
 
 ### Rescheduling
 
@@ -154,6 +155,11 @@
 - **D6 (Proposed).** One-tap presets: **Tonight** (19:00), **Tomorrow** and **Next week** (+7 days from today), both at the task's time of day, or as a whole day if it has none, and **Pick…**. These are offered on notifications, Live Activities, widgets and in the app.
 - **D7 (Proposed).** In the Pick… sheet and in the app, a new date past the deadline shows the deadline right below it, with **Same day**, **Pick…** and **Keep**. The one-tap presets on notifications, widgets and Siri move only the do date. The task is then marked **past deadline**.
 - **D8 (Proposed).** A deadline moved while rescheduling is stored with the override, like the do date, so the plan stays unchanged (D1). For a recurring task it applies to that occurrence only.
+
+### Screens
+
+- **U1 (Proposed).** The Now screen shows Overdue, Today, and undated tasks in the Inbox (newest first), so whatever was just captured is visible and one swipe away from a date.
+- **U2 (Proposed).** Swiping a task left offers Tomorrow (a full swipe), Tonight and Pick; swiping right marks it done.
 
 ### Blobs
 

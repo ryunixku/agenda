@@ -28,20 +28,23 @@ CORE (AgendaCore: plain Swift, no UI, no database)
 
 ```
 project.yml                  XcodeGen spec (generates Agenda.xcodeproj; don't commit the generated project)
-AgendaKit/                   local Swift package
-  Sources/AgendaCore/        rules and scheduling. Foundation only, so tests run without a simulator
-  Sources/AgendaData/        SwiftData models, CloudKit configuration, the Actions layer (all writes)
-  Sources/AgendaDelivery/    reminder engine: UserNotifications, AlarmKit, ActivityKit
-  Sources/AgendaIntents/     App Intents, App Entities, App Shortcuts
-  Sources/AgendaUI/          SwiftUI screens
+AgendaKit/                   local Swift package (tested with `swift test` on the Mac)
+  Sources/AgendaCore/        rules and scheduling. Foundation only
+  Sources/AgendaData/        SwiftData records, CloudKit setup, AgendaStore (all writes go through it)
   Tests/AgendaCoreTests/     most of the tests live here
-  Tests/AgendaDataTests/     Actions tested against an in-memory store
-App/                         app target (thin: entry point, notification delegate, background tasks)
-Widgets/                     widget extension: widgets, Live Activities, Control Center controls, alarm presentation
-Share/                       share extension: capture blobs from other apps
+  Tests/AgendaDataTests/     the store against an in-memory database
+Shared/                      compiled into the app and the widget extension
+  Store/                     SharedStore (also in the share extension), plain-words rule messages
+  Delivery/                  reminder engine: UserNotifications, AlarmKit, ActivityKit
+  Intents/                   App Intents and the Task entity
+  Activities/                Live Activity and alarm types
+  Format/                    date and reminder wording
+App/                         the app: screens, capture, notification buttons, background refresh, App Shortcuts
+Widgets/                     widget extension: Next tasks widget, Live Activity, alarm presentation, Control Center button
+Share/                       share extension: a shared page, photo, file or text becomes a task
 ```
 
-App Intents can live in a Swift package using `AppIntentsPackage`. If metadata extraction causes trouble, compile the intents source folder directly into the app and widget targets instead.
+The delivery and intents code is compiled straight into the app and widget targets instead of living in package modules. That keeps App Intents metadata extraction simple and lets the code use iOS-only frameworks while the package still tests on the Mac.
 
 The names (`Agenda`, `AgendaKit`, …) are working names taken from the repo. Change them if the user wants a different app name.
 
