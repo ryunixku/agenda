@@ -16,6 +16,8 @@ settings:
     MARKETING_VERSION: "0.1"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
 
@@ -27,10 +29,14 @@ targets:
   Agenda:
     type: application
     platform: iOS
-    sources: [App]
+    sources:
+      - App
+      - Shared
     dependencies:
       - package: AgendaKit
         product: AgendaCore
+      - package: AgendaKit
+        product: AgendaData
       - target: AgendaWidgets
       - target: AgendaShare
     settings:
@@ -42,6 +48,11 @@ targets:
         CFBundleDisplayName: Agenda
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AgendaAppGroup: group.$(APP_BUNDLE_ID)
+        AgendaCloudKitContainer: iCloud.$(APP_BUNDLE_ID)
+        CFBundleURLTypes:
+          - CFBundleURLName: $(APP_BUNDLE_ID)
+            CFBundleURLSchemes: [agenda]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         # CloudKit sync pushes, and background refresh to top up reminders (ARCHITECTURE §3.3).
@@ -65,10 +76,14 @@ targets:
   AgendaWidgets:
     type: app-extension
     platform: iOS
-    sources: [Widgets]
+    sources:
+      - Widgets
+      - Shared
     dependencies:
       - package: AgendaKit
         product: AgendaCore
+      - package: AgendaKit
+        product: AgendaData
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).widgets
@@ -78,21 +93,29 @@ targets:
         CFBundleDisplayName: Agenda
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AgendaAppGroup: group.$(APP_BUNDLE_ID)
+        AgendaCloudKitContainer: iCloud.$(APP_BUNDLE_ID)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: Widgets/AgendaWidgets.entitlements
       properties:
         com.apple.security.application-groups: [group.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-container-identifiers: [iCloud.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-services: [CloudKit]
 
-  # Captures a photo, scan, file, voice memo, link or text from any app as a task.
+  # Captures a photo, file, link or text from any app as a task.
   AgendaShare:
     type: app-extension
     platform: iOS
-    sources: [Share]
+    sources:
+      - Share
+      - Shared/Store
     dependencies:
       - package: AgendaKit
         product: AgendaCore
+      - package: AgendaKit
+        product: AgendaData
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).share
@@ -102,6 +125,8 @@ targets:
         CFBundleDisplayName: Add to Agenda
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AgendaAppGroup: group.$(APP_BUNDLE_ID)
+        AgendaCloudKitContainer: iCloud.$(APP_BUNDLE_ID)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
@@ -115,6 +140,8 @@ targets:
       path: Share/AgendaShare.entitlements
       properties:
         com.apple.security.application-groups: [group.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-container-identifiers: [iCloud.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-services: [CloudKit]
 
 schemes:
   Agenda:
@@ -127,3 +154,4 @@ schemes:
       config: Debug
       targets:
         - package: AgendaKit/AgendaCoreTests
+        - package: AgendaKit/AgendaDataTests

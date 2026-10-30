@@ -35,9 +35,13 @@ public struct Agenda: Hashable, Codable, Sendable {
         public var blobs: Set<BlobID>
     }
 
+    /// The Inbox has the same ID on every device, so two devices syncing through iCloud share one
+    /// Inbox instead of each creating their own.
+    public static let inboxID = UUID(uuidString: "00000000-0000-0000-0000-00000000B0C5")!
+
     /// A new, empty agenda with its Inbox.
     public init() {
-        let inbox = Container(name: "Inbox", kind: .list, isInbox: true)
+        let inbox = Container(id: Self.inboxID, name: "Inbox", kind: .list, isInbox: true)
         self.init(containers: [inbox.id: inbox], tasks: [:], completions: [], inbox: inbox.id)
     }
 
@@ -80,6 +84,21 @@ public struct Agenda: Hashable, Codable, Sendable {
             archive(task.id, openTasks == .markDone ? .done : .notDone, at: context)
         }
         containers[id]!.archived = Archived(at: context.now, outcome: .done)
+    }
+
+    public mutating func rename(container id: ContainerID, to name: String) throws(RuleViolation) {
+        _ = try activeContainer(id)
+        containers[id]!.name = name
+    }
+
+    /// The "Mark all done" option after finishing a project (C6): tasks that were closed as not
+    /// done along with the project become done.
+    public mutating func markLeftoversDone(inProject id: ContainerID) throws(RuleViolation) {
+        guard let project = containers[id] else { throw .notFound }
+        guard let closed = project.archived else { throw .notFound }
+        for task in tasks.values where task.container == id && task.archived == Archived(at: closed.at, outcome: .notDone) {
+            tasks[task.id]!.archived = Archived(at: closed.at, outcome: .done)
+        }
     }
 
     // MARK: Adding tasks
@@ -205,6 +224,28 @@ public struct Agenda: Hashable, Codable, Sendable {
         tasks[id]!.previous = nil
     }
 
+    /// Makes a parent's open subtasks steps that unlock one at a time, in their order (S8), or
+    /// lets them be done in any order again.
+    public mutating func setSubtasksInOrder(_ inOrder: Bool, of parentID: TaskID) throws(RuleViolation) {
+        _ = try activeTask(parentID)
+        let open = subtasks(of: parentID).filter { !$0.isArchived }
+        var updated = self
+        for subtask in open {
+            updated.tasks[subtask.id]!.previous = nil
+        }
+        if inOrder {
+            for (first, second) in zip(open, open.dropFirst()) {
+                try updated.link(first.id, then: second.id)
+            }
+        }
+        self = updated
+    }
+
+    public func subtasksInOrder(of parentID: TaskID) -> Bool {
+        let open = subtasks(of: parentID).filter { !$0.isArchived }
+        return open.count > 1 && open.dropFirst().allSatisfy { $0.previous != nil }
+    }
+
     /// Whether a task waits for the one before it (S4). A predecessor that is closed in any way no
     /// longer blocks (S12), and a locked parent locks its subtasks.
     public func isLocked(_ id: TaskID) -> Bool {
@@ -259,6 +300,16 @@ public struct Agenda: Hashable, Codable, Sendable {
         if let parentID = task.parent, let parent = tasks[parentID], !parent.isArchived,
            subtasks(of: parentID).allSatisfy({ $0.archived?.outcome == .done }) {
             archive(parentID, .done, at: context)
+        }
+    }
+
+    /// The "Mark all done" option after finishing a parent (S3, S10): subtasks that were closed as
+    /// not done along with it become done.
+    public mutating func markSubtasksDone(of parentID: TaskID) throws(RuleViolation) {
+        let parent = try storedTask(parentID)
+        guard let closed = parent.archived else { throw .notFound }
+        for subtask in subtasks(of: parentID) where subtask.archived == Archived(at: closed.at, outcome: .notDone) {
+            tasks[subtask.id]!.archived = Archived(at: closed.at, outcome: .done)
         }
     }
 

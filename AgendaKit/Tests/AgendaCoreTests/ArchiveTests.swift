@@ -125,6 +125,32 @@ import Testing
         #expect(agenda.tasks[music]?.archived?.outcome == .done)
     }
 
+    @Test func markAllDoneAfterFinishingAParent() throws { // S10
+        var agenda = Agenda()
+        let move = try agenda.addTask("Move flat", at: thursdayBefore)
+        let pack = try agenda.addSubtask("Pack", to: move, at: thursdayBefore)
+        let earlier = try agenda.addSubtask("Cancel internet", to: move, at: thursdayBefore)
+        try agenda.complete(earlier, at: at(2026, 10, 28))
+        try agenda.complete(move, at: thursdayBefore)
+
+        try agenda.markSubtasksDone(of: move)
+        #expect(agenda.tasks[pack]?.archived?.outcome == .done)
+        #expect(agenda.tasks[earlier]?.archived?.at == at(2026, 10, 28).now)
+    }
+
+    @Test func markAllDoneAfterFinishingAProject() throws { // C6
+        var agenda = Agenda()
+        let wedding = agenda.addProject("Wedding")
+        let music = try agenda.addTask("Pick music", in: wedding, at: thursdayBefore)
+        try agenda.completeProject(wedding, at: thursdayBefore)
+        try agenda.markLeftoversDone(inProject: wedding)
+        #expect(agenda.tasks[music]?.archived?.outcome == .done)
+    }
+
+    @Test func theInboxIsTheSameOnEveryDevice() {
+        #expect(Agenda().inbox == Agenda().inbox)
+    }
+
     @Test func listsNeverFinish() throws { // C1
         var agenda = Agenda()
         let groceries = agenda.addList("Groceries")

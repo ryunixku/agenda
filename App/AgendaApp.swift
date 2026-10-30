@@ -1,35 +1,44 @@
 import AgendaCore
+import AgendaData
+import BackgroundTasks
 import SwiftUI
 
 @main
 struct AgendaApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
+    private let store = SharedStore.shared
+    private let router = Router.shared
+
+    init() {
+        #if DEBUG
+        DemoData.seedIfRequested(store)
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
-            NowPlaceholderView()
+            RootView()
+                .environment(store)
+                .environment(router)
+                .onOpenURL { router.handle($0) }
         }
-    }
-}
-
-/// Stands in for the Now screen until the real screens arrive (M4). It already asks the core
-/// what can be done now, so it proves the app is wired to `AgendaCore`.
-struct NowPlaceholderView: View {
-    private let agenda = Agenda()
-
-    var body: some View {
-        NavigationStack {
-            let tasks = agenda.actionable(at: Context())
-            Group {
-                if tasks.isEmpty {
-                    ContentUnavailableView(
-                        "Nothing to do now",
-                        systemImage: "checkmark.circle",
-                        description: Text("Tasks for today show up here.")
-                    )
-                } else {
-                    List(tasks) { Text($0.title) }
-                }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                // Pick up what iCloud, widgets or the share extension changed meanwhile.
+                store.reload()
+                router.checkCaptureRequest()
+                Task { await ReminderEngine.shared.reconcile(store.agenda) }
+            case .background:
+                AppDelegate.scheduleRefresh()
+            default:
+                break
             }
-            .navigationTitle("Now")
+        }
+        .backgroundTask(.appRefresh(AppDelegate.refreshTaskID)) {
+            // Tops up the reminders iOS holds, since it keeps only the nearest 64.
+            await AppDelegate.refreshInBackground()
         }
     }
 }

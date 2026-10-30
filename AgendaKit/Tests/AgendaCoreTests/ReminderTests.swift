@@ -107,6 +107,16 @@ import Testing
         #expect(walls(agenda, dentist) == ["2026-10-31 09:30", "2026-11-01 09:30"])
     }
 
+    @Test func aReminderCanBecomeAnAlarm() throws { // R2
+        var agenda = Agenda()
+        let dentist = try addDentist(to: &agenda)
+        let main = try agenda.addReminder(.sticky, .minutes(-30), to: dentist)
+        let other = try agenda.addReminder(.sticky, .days(-1), to: dentist)
+        try agenda.setKind(.alarm, ofReminder: main, on: dentist)
+        try agenda.setKind(.alarm, ofReminder: other, on: dentist)
+        #expect(agenda.reminderTimes(for: dentist, at: thursdayBefore).map(\.kind) == [.alarm, .alarm])
+    }
+
     @Test func lockedAndArchivedTasksHaveNoReminders() throws { // S9, T2
         var agenda = Agenda()
         let first = try addDentist(to: &agenda)

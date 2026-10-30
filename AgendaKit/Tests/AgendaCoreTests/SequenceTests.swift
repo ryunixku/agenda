@@ -113,6 +113,23 @@ import Testing
         #expect(throws: RuleViolation.sequenceAcrossParents) { try agenda.link(trip, then: passports) }
     }
 
+    @Test func subtasksCanBeTurnedIntoStepsAndBack() throws { // S8
+        var agenda = Agenda()
+        let move = try addTask("Move flat", &agenda)
+        let pack = try agenda.addSubtask("Pack", to: move, at: thursdayBefore)
+        let load = try agenda.addSubtask("Load the van", to: move, at: thursdayBefore)
+        let drive = try agenda.addSubtask("Drive", to: move, at: thursdayBefore)
+
+        try agenda.setSubtasksInOrder(true, of: move)
+        #expect(agenda.subtasksInOrder(of: move))
+        #expect(agenda.tasks[load]?.previous == pack)
+        #expect(agenda.tasks[drive]?.previous == load)
+
+        try agenda.setSubtasksInOrder(false, of: move)
+        #expect(!agenda.subtasksInOrder(of: move))
+        #expect(!agenda.isLocked(drive))
+    }
+
     @Test func aLockedParentLocksItsSubtasks() throws {
         var agenda = Agenda()
         let quote = try addTask("Get a quote", &agenda)

@@ -52,6 +52,17 @@ extension Agenda {
         return try addReminder(kind, .on(days: anchor.days(to: moment.day), at: time), to: id)
     }
 
+    /// Switches a reminder between a sticky notification and an alarm (R2).
+    public mutating func setKind(_ kind: Reminder.Kind, ofReminder reminderID: ReminderID, on id: TaskID) throws(RuleViolation) {
+        let task = try activeTask(id)
+        if task.mainReminder?.id == reminderID {
+            tasks[id]!.mainReminder!.kind = kind
+            return
+        }
+        guard let index = task.reminders.firstIndex(where: { $0.id == reminderID }) else { throw .notFound }
+        tasks[id]!.reminders[index].kind = kind
+    }
+
     /// Removes a reminder. When the main one goes, the earliest remaining reminder becomes the main
     /// one, and every remaining reminder keeps its time (R9).
     public mutating func removeReminder(_ reminderID: ReminderID, from id: TaskID, at context: Context) throws(RuleViolation) {
