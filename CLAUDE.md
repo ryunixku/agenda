@@ -16,12 +16,14 @@ A to-do app built so people spend as little time in it as possible. They capture
 
 - iPhone only, with iCloud sync. iOS 26 is the minimum, because alarms need AlarmKit.
 - One level of subtasks. Sequences unlock the next task when the previous one is done.
-- Rescheduling never changes a task's own schedule. When the rescheduled date passes without completion, the task goes back to its original plan.
+- Rescheduling never changes a task's own schedule. When the rescheduled day ends without completion, a one-off task shows as overdue since that day, and a recurring task goes back to its schedule.
+- Done tasks are archived with an outcome (done or not done). Any task can be deleted for good.
 - One main reminder per task. All other reminders hang off it. A reminder is either sticky or an alarm.
 
 ## How to work in this repo
 
-- **All rules live in the core package (`AgendaCore`).** The app, widgets, intents, notification handlers and extensions call the same actions. Never re-implement a rule in a view or an extension.
+- **All rules live in the core package (`AgendaCore`, in `AgendaKit/`).** The app, widgets, intents, notification handlers and extensions call the same actions. Never re-implement a rule in a view or an extension.
+- **Test the core with `swift test` in `AgendaKit/`.** Tests name the rule IDs they cover. Add a test with every rule change.
 - **Proposed rules are not confirmed.** Before building on one, ask the user. `docs/PLAN.md` §1 lists what to ask first.
 - **No third-party dependencies.**
 - **Generate the Xcode project with XcodeGen** from `project.yml`. Don't hand-edit `.pbxproj`.
@@ -33,8 +35,8 @@ A to-do app built so people spend as little time in it as possible. They capture
 
 - [x] Product idea agreed
 - [x] Architecture agreed
-- [ ] Open questions in `docs/PLAN.md` §1 answered
-- [ ] M1 Core rules and tests
+- [x] Open questions in `docs/PLAN.md` §1 answered
+- [x] M1 Core rules and tests
 - [ ] M2 Xcode project skeleton
 - [ ] M3 Storage and iCloud
 - [ ] M4 In-app screens

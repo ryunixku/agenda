@@ -62,25 +62,28 @@ The names (`Agenda`, `AgendaKit`, …) are working names taken from the repo. Ch
 
 The hardest logic is recurrence, overrides, reminder offsets, time zones and daylight saving. That is where to-do apps usually get bugs. As pure functions it can be unit-tested thoroughly with an injected clock and calendar.
 
+**How it's built (M1).** `AgendaCore` has an `Agenda` value (lists, projects, tasks, completions) whose mutating methods are the only way to change it. Each method either applies the change or throws a `RuleViolation` and leaves the agenda untouched. Every method that depends on time takes a `Context` (now + calendar). The data layer (M3) loads what an action needs into an `Agenda`, calls the method, and writes the changes back.
+
 ### 3.2 Store the plan, calculate everything else
 
 **Stored per task:**
 - **Plan:** start, deadline, recurrence. Changed only by editing the task.
-- **Override:** a single "moved to" date. Changed only by Reschedule (D1).
+- **Reschedule (override):** a "moved to" do date, plus a deadline when the user moved that too (D4, D8). Changed only by Reschedule (D1).
+- **Current occurrence** (recurring tasks): the planned day of the occurrence that is open now. It moves forward only when an occurrence is completed (T5, T7).
 - **Reminders:** the main one is relative to the do date (R4). The others are offsets from the main one (R3).
 
 **Calculated on demand (never stored):**
-- **Effective do date:** the override, if it hasn't expired (D5). Otherwise the plan's current occurrence.
+- **Effective do date:** the reschedule, if there is one. A recurring task's reschedule only lasts until the end of its day (D3, D5); after that it's the plan's current occurrence.
 - **Reminder fire times:** effective do date → main reminder → other reminders.
-- **Task state:** open, locked (predecessor not done), overdue, late (override after deadline).
+- **Task state:** open, locked (predecessor not done), overdue (the do date's day is over), past deadline.
 
 **Why this supports the product:**
 - Reschedule is one write, and every reminder follows (D2).
-- When the override passes, the task falls back to the plan (D3). No cleanup job is needed, because the calculation sees the override has expired. The expired override can be removed lazily.
-- For recurring tasks, completing archives the occurrence, clears the override and moves the plan to the next occurrence. Reminders follow.
+- When a recurring task's reschedule day ends, it falls back to its schedule. A one-off task stays at its new date and shows as overdue since then (D3). No cleanup job is needed, because the calculation checks the day.
+- For recurring tasks, completing archives the occurrence, clears the reschedule and moves the current occurrence to the next one still ahead. Reminders follow.
 - The calendar uses the same calculation, so it can never disagree with the notifications.
 
-Day offsets such as "1 day before" should be added as calendar days, so the time of day survives daylight-saving changes. Store dates rounded to the minute so comparisons stay stable after an iCloud round trip.
+**Dates are floating (T13):** a day plus an optional time, with no time zone, stored as plain numbers (year, month, day, hour, minute). They compare exactly after an iCloud round trip. Day arithmetic runs on a fixed UTC calendar, so daylight saving can't shift a day, and day offsets such as "1 day before" keep the clock time. A date becomes an instant only where one is needed: reminder fire times and "past deadline".
 
 ### 3.3 The reminder engine reconciles instead of scheduling one-off calls
 
@@ -140,22 +143,24 @@ Task details open as a **sheet** rather than a pushed screen, so the user is nev
 ### 4.1 Data model (sketch)
 
 ```
-Container        kind: inbox | list | project; name; order; completedAt? (projects)
+Container        kind: list | project; isInbox (the Inbox is a list, C4); name; order;
+                 archived? (projects, C2)
   ├─ tasks[]
   └─ notes[]     standalone notes (N2)
 
 Task
-  title, container, order
+  title, container, order      order among siblings (parent's subtasks, or the container's top level)
   parent?                      one level only (S1)
   previous? / next?            sequence; derived "locked" state (S4)
-  plan: start?, deadline?, recurrence?
-  override?: Date              reschedule (D1); current occurrence only
-  reminders[]                  exactly one isMain when non-empty (R1)
+  plan: start?, deadline?, recurrence?   floating dates (T13)
+  occurrence?: Day             recurring only: the current occurrence
+  rescheduled?: doDate, deadline?        reschedule (D1, D4); current occurrence only
+  mainReminder?, reminders[]   the main one is the base (R1)
   notes[]
   blobs[]
   primaryBlob?                 the task IS this blob (B2)
   clonedFrom?: task id
-  archivedAt?                  set = archived, read-only (T2)
+  archived?: at, outcome       done | notDone (T8); set = read-only (T2)
 
 Reminder         kind: sticky | alarm; isMain; offset
                  (main: relative to the do date; others: relative to main)
@@ -168,7 +173,8 @@ Completion       one per completed occurrence of a recurring task:
 
 - **One-off task done:** the task itself gets `archivedAt` and becomes read-only. Nothing is copied.
 - **Recurring task done:** a lightweight `Completion` entry is archived. The task moves on (T5). Blobs are not duplicated per occurrence.
-- **Clone:** one core operation for any task, active or archived. It creates a new active task and copies fields, notes, reminders and blobs. Blob data is copied so the clone is independent.
+- **Clone:** one core operation for any task, active or archived. It creates a new active task and copies fields, notes, reminders, blobs and subtasks (T12). The core returns which blob was copied to which, so storage copies the data and the clone is independent.
+- **Delete:** removes a task for good, with its subtasks, notes, blobs and completions (T9–T11). The core returns the removed blob IDs so storage can delete the data.
 
 ### 4.2 Calendar feed
 

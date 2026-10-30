@@ -95,7 +95,7 @@
 - **T9 (Confirmed, F4).** The user can **delete** a task. A deleted task is gone for good, including from the archive. Apart from that, nothing is ever removed.
 - **T10 (Confirmed, G2).** Any task can be deleted, active or archived.
 - **T11 (Proposed).** Delete asks once to confirm, because it can't be undone. Deleting a parent deletes its subtasks. Deleting a task in the middle of a sequence joins its neighbours (A → B → C becomes A → C).
-- **T12 (Proposed).** A clone copies the title, plan, reminders, notes, blobs and subtasks (as open). It does not copy a reschedule or sequence links. A clone of a task whose project is archived goes to the Inbox.
+- **T12 (Proposed).** A clone copies the title, plan, reminders, notes, blobs and subtasks (as open, with their step order). It does not copy a reschedule or links to other tasks. A clone of a subtask stays under its parent while the parent is open. A clone of a task whose project is archived goes to the Inbox.
 - **T13 (Proposed).** Dates are "floating": "Tuesday 10:00" means 10:00 local time wherever the user is. A date is either a whole day or a day with a time.
 
 ### Subtasks and sequences
@@ -108,7 +108,7 @@
 - **S6 (Confirmed, F10).** S5 applies only when both dates are set. An edit that would break it is blocked, and the user is offered a one-tap "shift the next task" fix.
 - **S7 (Confirmed, F2).** Recurring tasks cannot be part of a sequence, because "B unlocks when A is done" is unclear if A repeats forever.
 - **S8 (Confirmed, F3).** The subtasks of one parent can form a sequence (step 1 → step 2 → step 3).
-- **S9 (Proposed).** Locked tasks appear greyed out in their project or list and are hidden from the "Now" screen.
+- **S9 (Proposed).** Locked tasks appear greyed out in their project or list, are hidden from the "Now" screen, and their reminders don't fire until they unlock. A locked parent locks its subtasks.
 - **S10 (Proposed).** In the app, the S3 option is a short banner right after the tap ("2 open subtasks archived as not done · Mark all done"), not a dialog in the way. From outside the app (widget, notification, Siri) the default applies.
 - **S11 (Confirmed, G1, not objected to).** S5 constrains plans only. Rescheduling A past B's start is allowed ("life happens"). B stays locked until A is done.
 - **S12 (Proposed).** A locked task can't be completed. A predecessor that is closed in any way (done, archived as not done, or deleted) unlocks the next task.
@@ -151,7 +151,7 @@
   - a **recurring** task goes back to its schedule. The occurrence shows as overdue since its planned date (T7).
 - **D4 (Confirmed, F6, G1).** Rescheduling moves the **do date**. When the new date is later than the deadline, the user can **move the deadline in the same step**, quickly. The app never guesses a new deadline. The user's words: "life happens".
 - **D5 (Confirmed, F7).** An override runs out at the **end of its day**, local time. Completing the task clears it. For a recurring task, the override applies only to the current occurrence.
-- **D6 (Proposed).** One-tap presets: **Tonight** (19:00), **Tomorrow** (same time of day, or 09:00), **Next week** (+7 days), and **Pick…**. These are offered on notifications, Live Activities, widgets and in the app.
+- **D6 (Proposed).** One-tap presets: **Tonight** (19:00), **Tomorrow** and **Next week** (+7 days from today), both at the task's time of day, or as a whole day if it has none, and **Pick…**. These are offered on notifications, Live Activities, widgets and in the app.
 - **D7 (Proposed).** In the Pick… sheet and in the app, a new date past the deadline shows the deadline right below it, with **Same day**, **Pick…** and **Keep**. The one-tap presets on notifications, widgets and Siri move only the do date. The task is then marked **past deadline**.
 - **D8 (Proposed).** A deadline moved while rescheduling is stored with the override, like the do date, so the plan stays unchanged (D1). For a recurring task it applies to that occurrence only.
 
