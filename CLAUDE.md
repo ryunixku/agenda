@@ -26,10 +26,22 @@ A to-do app built so people spend as little time in it as possible. They capture
 - **Test the core with `swift test` in `AgendaKit/`.** Tests name the rule IDs they cover. Add a test with every rule change.
 - **Proposed rules are not confirmed.** Before building on one, ask the user. `docs/PLAN.md` §1 lists what to ask first.
 - **No third-party dependencies.**
-- **Generate the Xcode project with XcodeGen** from `project.yml`. Don't hand-edit `.pbxproj`.
+- **Generate the Xcode project with XcodeGen** from `project.yml`. Don't hand-edit `.pbxproj`. Info.plist and `.entitlements` files are generated from `project.yml` too, and are not committed. Re-run `xcodegen` after adding or removing files.
+- **Placeholders:** `APP_BUNDLE_ID` (`com.example.agenda`) and `DEVELOPMENT_TEAM` (empty) at the top of `project.yml`. The App Group and iCloud container are derived from `APP_BUNDLE_ID`. Until the user provides real ones, builds are Simulator-only and iCloud doesn't sync.
 - **Verify before reporting done:** run `swift test` for the package, build for the iOS Simulator, launch the app, and look at a screenshot. Some things only work on a real device: alarms, notifications, iCloud sync and Live Activities. Tell the user what still needs testing on their iPhone; don't claim it works.
 - **Ignore the other branches** (`codex/todo-app`, `claude/todo`). They are unrelated earlier attempts and not part of this plan.
 - **Use the user's language.** Keep explanations plain and short. The user cares about how a feature serves "do stuff, don't stay in the app".
+
+## Build and run
+
+```sh
+xcodegen                                    # in the repo root
+swift test --package-path AgendaKit         # core tests, no simulator needed
+xcodebuild -project Agenda.xcodeproj -scheme Agenda \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build
+# The app is then at DerivedData/Build/Products/Debug-iphonesimulator/Agenda.app
+# `xcodebuild … test` runs the core tests on the simulator too.
+```
 
 ## Status
 
@@ -37,7 +49,7 @@ A to-do app built so people spend as little time in it as possible. They capture
 - [x] Architecture agreed
 - [x] Open questions in `docs/PLAN.md` §1 answered
 - [x] M1 Core rules and tests
-- [ ] M2 Xcode project skeleton
+- [x] M2 Xcode project skeleton (with placeholder IDs; see above)
 - [ ] M3 Storage and iCloud
 - [ ] M4 In-app screens
 - [ ] M5 Reminder engine

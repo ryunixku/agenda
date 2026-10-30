@@ -1,0 +1,129 @@
+# XcodeGen spec. Run `xcodegen` in the repo root to generate Agenda.xcodeproj.
+# Info.plist and .entitlements files are generated from this file too: edit them here.
+name: Agenda
+
+options:
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    # Placeholders until the real ones exist (docs/PLAN.md §2). The App Group and the iCloud
+    # container are derived from APP_BUNDLE_ID, so it is the only ID to change.
+    APP_BUNDLE_ID: com.example.agenda
+    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+
+packages:
+  AgendaKit:
+    path: AgendaKit
+
+targets:
+  Agenda:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: AgendaKit
+        product: AgendaCore
+      - target: AgendaWidgets
+      - target: AgendaShare
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Agenda
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # CloudKit sync pushes, and background refresh to top up reminders (ARCHITECTURE §3.3).
+        UIBackgroundModes: [remote-notification, fetch]
+        BGTaskSchedulerPermittedIdentifiers: [$(PRODUCT_BUNDLE_IDENTIFIER).refresh]
+        NSSupportsLiveActivities: true
+        NSAlarmKitUsageDescription: Agenda rings an alarm for reminders you set as alarms, even in Silent mode.
+        NSCalendarsFullAccessUsageDescription: Agenda shows your Apple Calendar events next to your tasks when you turn that on.
+        NSCameraUsageDescription: Agenda uses the camera to capture photos and scans as tasks.
+        NSMicrophoneUsageDescription: Agenda records voice memos for your tasks.
+    entitlements:
+      path: App/Agenda.entitlements
+      properties:
+        com.apple.security.application-groups: [group.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-container-identifiers: [iCloud.$(APP_BUNDLE_ID)]
+        com.apple.developer.icloud-services: [CloudKit]
+        aps-environment: development
+        com.apple.developer.usernotifications.time-sensitive: true
+
+  # Widgets, Live Activities, Control Center controls and alarm presentation.
+  AgendaWidgets:
+    type: app-extension
+    platform: iOS
+    sources: [Widgets]
+    dependencies:
+      - package: AgendaKit
+        product: AgendaCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).widgets
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Agenda
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widgets/AgendaWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.$(APP_BUNDLE_ID)]
+
+  # Captures a photo, scan, file, voice memo, link or text from any app as a task.
+  AgendaShare:
+    type: app-extension
+    platform: iOS
+    sources: [Share]
+    dependencies:
+      - package: AgendaKit
+        product: AgendaCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).share
+    info:
+      path: Share/Info.plist
+      properties:
+        CFBundleDisplayName: Add to Agenda
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 10
+              NSExtensionActivationSupportsFileWithMaxCount: 10
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+    entitlements:
+      path: Share/AgendaShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.$(APP_BUNDLE_ID)]
+
+schemes:
+  Agenda:
+    build:
+      targets:
+        Agenda: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - package: AgendaKit/AgendaCoreTests
