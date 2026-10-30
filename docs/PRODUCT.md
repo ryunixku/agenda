@@ -45,7 +45,28 @@
 | 8 | iPhone only, or also iPad/Watch? iCloud sync? | "iPhone only and yes I want iCloud" |
 | 9 | Can archived tasks be restored? | "Archived tasks can be cloned not restored, which also points that any task can be cloned" |
 
-After seeing the architecture (`ARCHITECTURE.md`), the user moved on to setting up a Mac. They did **not** answer the four follow-up questions. Those are in `PLAN.md` §1.
+### Follow-up questions and the user's answers (2026-10-29, on the Mac)
+
+| # | Claude asked (suggested default) | User answered (verbatim) |
+|---|---|---|
+| F1 | Repeats on a fixed schedule, "X after I last did it", or either? (either) | "On a fixed schedule" |
+| F2 | Can a repeating task be a step in a sequence? (no) | "No" |
+| F3 | Can a task's subtasks be ordered steps that unlock one at a time? (yes) | "Yes" |
+| F4 | Finishing a project with tasks still open? (ask once: move the leftovers to the Inbox, or archive them with the project) | "Archiving is the way to go, we want to keep the history of what was done and what doesn’t of course unless the user deletes the task" |
+| F5 | Is there an Inbox, and does every task live in exactly one place? (yes, yes) | "Okay I guess is easier to have an inbox it should be a list as is meant to be temporary if the task is no assigned to another list or project after creation" |
+| F6 | Rescheduling moves the do date, never the deadline. Should some reminders stay tied to the deadline? (no, all follow the do date) | "It should move the do date only of both if the new date passes even the deadline, life happens" |
+| F7 | When does a reschedule run out: at the end of the new day, or as soon as its time passes? (end of the day) | "Please explain I don’t get it". After an example (planned Monday, moved to Tuesday, not done): "It should be A, although sounds a bit confusing, I mean, you didn't mentioned as a recurring task, because if is a recurring task, then you're right, but if not, then you're wrong, it should be saying overdue since Tuesday, no?" |
+| F8 | A missed repeat stays overdue until done, then jumps to the next future date? | "agree" |
+| F9 | Ticking off a parent while subtasks are open: the open ones are archived with it, no dialog? | "Yes default is archiving tasks as open but it needs to show the option to mark all subtasks as done" |
+| F10 | An edit that breaks the sequence date rule is blocked, with a one-tap "shift the next task"? | "I agree" |
+
+### Second follow-up (2026-10-29)
+
+| # | Claude asked | User answered (verbatim) |
+|---|---|---|
+| G1 | Reading of F6: a new date past the deadline moves the deadline to that same day, temporarily. All reminders follow the do date. In a sequence, A may slip past B's start; B stays locked. | "I mean why guessing?, let the user update both quickly, no?" (The other two points were not objected to.) |
+| G2 | Can archived tasks be deleted too, or only open ones? (both, with one confirmation) | "Yeah you should be able to delete any task you want regardless" |
+| G3 | The Inbox is a built-in list that can't be deleted; new tasks land there unless put elsewhere. | "Correct" |
 
 ## 2. Product principle
 
@@ -68,27 +89,40 @@ After seeing the architecture (`ARCHITECTURE.md`), the user moved on to setting 
 - **T3 (Confirmed).** Archived tasks **cannot be restored**. They can be **cloned**, and **any task**, active or archived, can be cloned. A clone is a new active task.
 - **T4 (Confirmed).** Recurring tasks exist.
 - **T5 (Proposed).** Completing a recurring task archives that occurrence and moves the task on to its next occurrence. The series keeps going.
-- **T6 (Proposed).** Recurrence supports both a fixed schedule ("every Monday") and recurrence counted from completion ("2 weeks after I last did it").
-- **T7 (Proposed).** If a recurring occurrence is missed, it stays overdue until it is done. Completing it moves on to the next *future* occurrence, so missed occurrences don't pile up.
+- **T6 (Confirmed, F1).** Recurrence is on a **fixed schedule** only, for example every Monday or the 1st of each month. There is no "X after I last did it".
+- **T7 (Confirmed, F8).** If a recurring occurrence is missed, it stays overdue until it is done. Completing it moves on to the next *future* occurrence, so missed occurrences don't pile up.
+- **T8 (Confirmed, F4, F9).** The archive keeps the history of what was done **and what wasn't**. Each archived task records its outcome: **done**, or **not done** (closed while still open, for example along with its project or parent).
+- **T9 (Confirmed, F4).** The user can **delete** a task. A deleted task is gone for good, including from the archive. Apart from that, nothing is ever removed.
+- **T10 (Confirmed, G2).** Any task can be deleted, active or archived.
+- **T11 (Proposed).** Delete asks once to confirm, because it can't be undone. Deleting a parent deletes its subtasks. Deleting a task in the middle of a sequence joins its neighbours (A → B → C becomes A → C).
+- **T12 (Proposed).** A clone copies the title, plan, reminders, notes, blobs and subtasks (as open). It does not copy a reschedule or sequence links. A clone of a task whose project is archived goes to the Inbox.
+- **T13 (Proposed).** Dates are "floating": "Tuesday 10:00" means 10:00 local time wherever the user is. A date is either a whole day or a day with a time.
 
 ### Subtasks and sequences
 
 - **S1 (Confirmed).** Subtasks are **one level deep**. A subtask cannot have subtasks.
 - **S2 (Confirmed).** When every subtask is done, the parent is done automatically and is archived.
-- **S3 (Proposed).** If the user completes a parent directly while some subtasks are still open, those subtasks are archived along with it. This takes one tap with no blocking dialog.
+- **S3 (Confirmed, F9).** If the user completes a parent directly while some subtasks are still open, those subtasks are archived with it as **not done** by default (T8), and the app offers an option to **mark all subtasks done** instead.
 - **S4 (Confirmed).** In a sequence A → B, **B is locked until A is done**. When A is done, B unlocks.
 - **S5 (Confirmed).** Each task in a sequence has its own schedule, but **A's deadline cannot be later than B's start date**.
-- **S6 (Proposed).** S5 applies only when both dates are set. An edit that would break it is blocked, and the user is offered a one-tap "shift the next task" fix.
-- **S7 (Proposed).** Recurring tasks cannot be part of a sequence, because "B unlocks when A is done" is unclear if A repeats forever.
-- **S8 (Proposed).** The subtasks of one parent can form a sequence (step 1 → step 2 → step 3).
+- **S6 (Confirmed, F10).** S5 applies only when both dates are set. An edit that would break it is blocked, and the user is offered a one-tap "shift the next task" fix.
+- **S7 (Confirmed, F2).** Recurring tasks cannot be part of a sequence, because "B unlocks when A is done" is unclear if A repeats forever.
+- **S8 (Confirmed, F3).** The subtasks of one parent can form a sequence (step 1 → step 2 → step 3).
 - **S9 (Proposed).** Locked tasks appear greyed out in their project or list and are hidden from the "Now" screen.
+- **S10 (Proposed).** In the app, the S3 option is a short banner right after the tap ("2 open subtasks archived as not done · Mark all done"), not a dialog in the way. From outside the app (widget, notification, Siri) the default applies.
+- **S11 (Confirmed, G1, not objected to).** S5 constrains plans only. Rescheduling A past B's start is allowed ("life happens"). B stays locked until A is done.
+- **S12 (Proposed).** A locked task can't be completed. A predecessor that is closed in any way (done, archived as not done, or deleted) unlocks the next task.
+- **S13 (Proposed).** A sequence links top-level tasks to each other, or subtasks of the same parent. A task has at most one previous and one next task.
+- **S14 (Proposed).** Recurring tasks can't have subtasks or be subtasks, for the same reason as S7.
 
 ### Projects and lists
 
 - **C1 (Confirmed).** **Projects** are meant to be completed. **Lists** never end.
-- **C2 (Proposed).** Completing a project archives it, the same way a task is archived.
-- **C3 (Proposed).** When a project with unfinished tasks is completed, the user is asked once whether to move the leftovers to the Inbox or archive them with the project.
-- **C4 (Proposed).** There is an **Inbox** for anything captured without a project or list. Each task belongs to exactly one container: the Inbox, a list or a project.
+- **C2 (Confirmed, F4).** Completing a project archives it, the same way a task is archived.
+- **C3 (Confirmed, F4).** When a project with unfinished tasks is completed, those tasks are archived with it as **not done** (T8), so the history is kept. Nothing is moved to the Inbox.
+- **C4 (Confirmed, F5).** There is an **Inbox**. It is a **list**: the temporary place a new task goes when it isn't put in another list or project. Each task belongs to exactly one container: a list (the Inbox included) or a project.
+- **C5 (Confirmed, G3).** The Inbox is built in. It can't be deleted.
+- **C6 (Proposed).** As with subtasks (S10), completing a project with open tasks shows a "Mark all done" banner.
 
 ### Notes
 
@@ -101,19 +135,25 @@ After seeing the architecture (`ARCHITECTURE.md`), the user moved on to setting 
 - **R2 (Confirmed).** Each reminder is either a **sticky notification** or an **alarm**.
 - **R3 (Confirmed, as Claude interpreted it and the user accepted).** The other reminders are set relative to the main reminder, for example "1 day before main". When the main reminder moves, they all move with it.
 - **R4 (Proposed).** The main reminder is set relative to the task's **do date**: the start date, or the deadline if there is no start date. Examples are "on the day at 9:00" and "30 minutes before".
-- **R5 (Proposed, open).** Should some reminders stay tied to the deadline and *not* move when the task is rescheduled, like a "deadline is tomorrow" warning? Not decided.
+- **R5 (Confirmed, G1, not objected to).** No reminder is tied to the deadline. All reminders follow the do date.
 - **R6 (Proposed).** A sticky reminder is a Lock Screen Live Activity scheduled for the reminder time, plus a time-sensitive notification that repeats until acted on. A suggested default is every 10 minutes, up to 6 times. See ARCHITECTURE §4.3 for why both are used.
 - **R7 (Proposed).** An alarm rings through Silent mode and Focus using AlarmKit. Its secondary button is **Done**, which completes the task straight from the ringing alarm.
 - **R8 (Proposed).** If a reminder is added to an undated task, the reminder's time becomes the task's start date.
+- **R9 (Proposed).** If the main reminder is removed, the earliest remaining reminder becomes the main one, and every remaining reminder keeps its time.
+- **R10 (Proposed).** If the do date is a whole day with no time, reminders that count minutes from it ("30 minutes before") count from 09:00.
 
 ### Rescheduling
 
 - **D1 (Confirmed).** Rescheduling **never changes the task's plan**. It sets a temporary **override** of the do date.
 - **D2 (Confirmed).** All reminders follow the override automatically. No reminder needs to be edited by hand.
-- **D3 (Confirmed).** If the override date passes and the task is not done, the task **goes back to its original plan**.
-- **D4 (Proposed).** The deadline is never moved by rescheduling. If the override is after the deadline, the task is marked "late" but the move is allowed.
-- **D5 (Proposed).** An override expires at the end of its day in local time. Completing the task clears it. For a recurring task, the override applies only to the current occurrence.
+- **D3 (Confirmed, F7).** If the override's day ends and the task is not done:
+  - a **one-off** task stays at the new date and shows as **overdue since that date**. Its original plan is kept unchanged.
+  - a **recurring** task goes back to its schedule. The occurrence shows as overdue since its planned date (T7).
+- **D4 (Confirmed, F6, G1).** Rescheduling moves the **do date**. When the new date is later than the deadline, the user can **move the deadline in the same step**, quickly. The app never guesses a new deadline. The user's words: "life happens".
+- **D5 (Confirmed, F7).** An override runs out at the **end of its day**, local time. Completing the task clears it. For a recurring task, the override applies only to the current occurrence.
 - **D6 (Proposed).** One-tap presets: **Tonight** (19:00), **Tomorrow** (same time of day, or 09:00), **Next week** (+7 days), and **Pick…**. These are offered on notifications, Live Activities, widgets and in the app.
+- **D7 (Proposed).** In the Pick… sheet and in the app, a new date past the deadline shows the deadline right below it, with **Same day**, **Pick…** and **Keep**. The one-tap presets on notifications, widgets and Siri move only the do date. The task is then marked **past deadline**.
+- **D8 (Proposed).** A deadline moved while rescheduling is stored with the override, like the do date, so the plan stays unchanged (D1). For a recurring task it applies to that occurrence only.
 
 ### Blobs
 

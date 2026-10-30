@@ -2,6 +2,8 @@
 
 ## 1. Ask the user first
 
+**Status (2026-10-29):** asked and answered on the Mac. The answers are in `PRODUCT.md` §1 (F1–F10, G1–G3). Nothing blocks M1.
+
 Ask these in **one batch** before starting M1, with the suggested default for each, so the user can just say "defaults are fine". The rule IDs refer to `PRODUCT.md`.
 
 **These affect the core rules, so settle them before M1:**
